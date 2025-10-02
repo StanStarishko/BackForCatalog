@@ -5,6 +5,7 @@
 
 import type { FastifyInstance } from 'fastify';
 import { getCatalogue } from '../services/catalog.js';
+import { isStorageHealthy } from '../storage/index.js';
 import type { CatalogueResponse, ErrorResponse } from '../types/index.js';
 import { validatePaginationQuery } from '../utils/validation.js';
 
@@ -17,6 +18,7 @@ export async function catalogueRoutes(fastify: FastifyInstance): Promise<void> {
    * GET /catalog
    * Retrieves paginated list of active products
    * Query parameters: page (default: 1), limit (default: 10, max: 100)
+   * Works even with empty storage, returns empty array
    */
   fastify.get<{
     Querystring: { page?: string; limit?: string };
@@ -36,6 +38,13 @@ export async function catalogueRoutes(fastify: FastifyInstance): Promise<void> {
 
     try {
       const catalogue = getCatalogue(validation.data ?? { page: 1, limit: 10 });
+
+      // If storage is not healthy, add a warning header
+      if (!isStorageHealthy()) {
+        reply.header('X-Storage-Warning', 'Product data unavailable - returning empty catalogue');
+        request.log.warn('Catalogue request processed with empty storage');
+      }
+
       return reply.code(200).send(catalogue);
     } catch (error) {
       request.log.error(error, 'Failed to retrieve catalogue');

@@ -6,6 +6,7 @@
 import type { FastifyInstance } from 'fastify';
 import { authenticationMiddleware } from '../middleware/auth.js';
 import { processCheckout } from '../services/checkout.js';
+import { isStorageHealthy } from '../storage/index.js';
 import type { CheckoutRequest, CheckoutResponse, ErrorResponse } from '../types/index.js';
 import { validateCheckoutRequest } from '../utils/validation.js';
 
@@ -29,6 +30,18 @@ export async function checkoutRoutes(fastify: FastifyInstance): Promise<void> {
       preHandler: authenticationMiddleware,
     },
     async (request, reply) => {
+      // Check storage health before processing checkout
+      if (!isStorageHealthy()) {
+        request.log.error('Checkout rejected: product storage is unavailable');
+        return reply.code(503).send({
+          error: {
+            code: 'SERVICE_UNAVAILABLE',
+            message:
+              'Product catalogue is currently unavailable. Unable to process checkout. Please try again later.',
+          },
+        });
+      }
+
       // Validate request body
       const validation = validateCheckoutRequest(request.body);
 
@@ -61,7 +74,8 @@ export async function checkoutRoutes(fastify: FastifyInstance): Promise<void> {
           error instanceof Error &&
           (errorMessage.includes('not found') ||
             errorMessage.includes('not available') ||
-            errorMessage.includes('Insufficient inventory'));
+            errorMessage.includes('Insufficient inventory') ||
+            errorMessage.includes('currently unavailable'));
 
         const statusCode = isClientError ? 400 : 500;
 

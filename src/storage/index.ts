@@ -31,13 +31,19 @@ export const usersStorage: UserStorage = new Map<string, User>();
  */
 export const authCodesStorage: AuthCodeStorage = new Map<string, AuthorizationCode>();
 
+/**
+ * Storage health status flag
+ */
+let storageHealthy = false;
+
 // ==================== Initialization Functions ====================
 
 /**
  * Loads initial product data from JSON file into storage
- * @throws {Error} If file cannot be read or parsed
+ * Does not throw errors - logs them and continues with empty storage
+ * @returns Number of products loaded successfully
  */
-export function loadInitialProducts(): void {
+export function loadInitialProducts(): number {
   try {
     const dataPath = join(process.cwd(), 'data', 'products.json');
     const fileContent = readFileSync(dataPath, 'utf-8');
@@ -50,11 +56,60 @@ export function loadInitialProducts(): void {
       productsStorage.set(product.id, product);
     }
 
-    console.log(`Loaded ${productsStorage.size} products into storage`);
+    storageHealthy = true;
+    console.log(`✓ Successfully loaded ${productsStorage.size} products into storage`);
+    return productsStorage.size;
   } catch (error) {
-    console.error('Failed to load initial products:', error);
-    throw new Error('Could not initialise product storage');
+    storageHealthy = false;
+    
+    if (error instanceof Error) {
+      if (error.message.includes('ENOENT')) {
+        console.error('✗ Product data file not found: data/products.json');
+        console.error('✗ Server will start with empty product catalogue');
+        console.error('✗ Please ensure data/products.json exists or connect to a database');
+      } else if (error instanceof SyntaxError) {
+        console.error('✗ Failed to parse products.json: Invalid JSON format');
+        console.error(`✗ Error: ${error.message}`);
+      } else {
+        console.error('✗ Failed to load product data:', error.message);
+      }
+    } else {
+      console.error('✗ Failed to load product data: Unknown error');
+    }
+
+    console.warn('⚠ Application will continue with empty product storage');
+    console.warn('⚠ Product-related endpoints will return empty results');
+    
+    return 0;
   }
+}
+
+/**
+ * Checks if storage has been successfully initialized with data
+ * @returns True if storage is healthy and has data
+ */
+export function isStorageHealthy(): boolean {
+  return storageHealthy && productsStorage.size > 0;
+}
+
+/**
+ * Gets storage health status with details
+ * @returns Object containing health status and details
+ */
+export function getStorageHealth(): {
+  healthy: boolean;
+  hasProducts: boolean;
+  message: string;
+} {
+  const hasProducts = productsStorage.size > 0;
+  
+  return {
+    healthy: storageHealthy,
+    hasProducts,
+    message: hasProducts
+      ? 'Storage is healthy and operational'
+      : 'Storage is empty - no product data available',
+  };
 }
 
 /**
@@ -64,6 +119,7 @@ export function clearAllStorage(): void {
   productsStorage.clear();
   usersStorage.clear();
   authCodesStorage.clear();
+  storageHealthy = false;
 }
 
 /**
@@ -74,11 +130,13 @@ export function getStorageStats(): {
   products: number;
   users: number;
   authCodes: number;
+  healthy: boolean;
 } {
   return {
     products: productsStorage.size,
     users: usersStorage.size,
     authCodes: authCodesStorage.size,
+    healthy: storageHealthy,
   };
 }
 

@@ -10,7 +10,12 @@ import { errorHandler, notFoundHandler } from './middleware/error.js';
 import { authRoutes } from './routes/auth.js';
 import { catalogueRoutes } from './routes/catalog.js';
 import { checkoutRoutes } from './routes/checkout.js';
-import { loadInitialProducts, startAuthCodeCleanup } from './storage/index.js';
+import {
+  getStorageHealth,
+  getStorageStats,
+  loadInitialProducts,
+  startAuthCodeCleanup,
+} from './storage/index.js';
 import { loadConfig } from './utils/config.js';
 
 /**
@@ -60,11 +65,25 @@ async function buildApp() {
     }),
   });
 
-  // Health check endpoint
-  fastify.get('/health', async () => ({
-    status: 'healthy',
-    timestamp: new Date().toISOString(),
-  }));
+  // Health check endpoint with storage status
+  fastify.get('/health', async () => {
+    const storageHealth = getStorageHealth();
+    const stats = getStorageStats();
+
+    return {
+      status: 'healthy',
+      timestamp: new Date().toISOString(),
+      storage: {
+        healthy: storageHealth.healthy,
+        message: storageHealth.message,
+        stats: {
+          products: stats.products,
+          users: stats.users,
+          authCodes: stats.authCodes,
+        },
+      },
+    };
+  });
 
   // Register routes
   await fastify.register(authRoutes);
@@ -85,15 +104,23 @@ async function start() {
   try {
     const config = await loadConfig();
 
-    // Load initial data
-    fastify.log.info('Loading initial product data...');
-    loadInitialProducts();
+    // Attempt to load initial data
+    // Server continues even if data loading fails
+    fastify.log.info('Attempting to load initial product data...');
+    const loadedCount = loadInitialProducts();
 
-    // Start auth code cleanup
+    if (loadedCount > 0) {
+      fastify.log.info(`✓ Product data loaded successfully (${loadedCount} products)`);
+    } else {
+      fastify.log.warn('⚠ No product data loaded - server will operate with empty catalogue');
+      fastify.log.warn('⚠ Ensure data/products.json exists or connect to a database');
+    }
+
+    // Start auth code cleanup service
     startAuthCodeCleanup();
     fastify.log.info('Started authorization code cleanup service');
 
-    // Start server
+    // Start server regardless of data loading status
     await fastify.listen({
       port: config.port,
       host: config.host,
@@ -101,6 +128,7 @@ async function start() {
 
     fastify.log.info(`Server running on http://${config.host}:${config.port}`);
     fastify.log.info(`Environment: ${config.nodeEnv}`);
+    fastify.log.info('✓ Server started successfully');
   } catch (error) {
     fastify.log.error(error, 'Failed to start server');
     process.exit(1);

@@ -59,15 +59,19 @@ export function loadConfig(): EnvironmentConfig {
     logLevel: getEnvVariable('LOG_LEVEL', 'info'),
   };
 
-  // Validate JWT secret in production
-/*   if (config.nodeEnv === 'production' && config.jwtSecret === 'dev-secret-change-in-production') {
-    throw new Error('JWT_SECRET must be set to a secure value in production');
+  // Warn if using default JWT secret in production (don't throw for demo purposes)
+  if (
+    config.nodeEnv === 'production' &&
+    config.jwtSecret === 'dev-secret-change-in-production'
+  ) {
+    console.warn('⚠ WARNING: Using default JWT_SECRET in production mode.');
+    console.warn(
+      '⚠ This is acceptable for demo/testing purposes only.'
+    );
+    console.warn(
+      '⚠ For real production deployment, set a secure JWT_SECRET environment variable.'
+    );
   }
- */
-      if (config.nodeEnv === 'production' && config.jwtSecret === 'unique-super-secret-jwt-key-for-test') {
-        console.warn('⚠️  WARNING: Using default JWT_SECRET in production mode. This is acceptable for demo/testing purposes only.');
-        console.warn('⚠️  For real production deployment, set a secure JWT_SECRET environment variable.');
-      }
 
   return config;
 }

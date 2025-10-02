@@ -4,8 +4,13 @@
  */
 
 import { randomBytes } from 'node:crypto';
+import { productsStorage } from '../storage/index.js';
 import type { CheckoutItem, CheckoutResponse } from '../types/index.js';
-import { checkProductAvailability, getProductById, updateProductInventory } from './catalog.js';
+import {
+  checkProductAvailability,
+  getProductById,
+  updateProductInventory,
+} from './catalog.js';
 
 /**
  * Generates a mock payment intent ID
@@ -17,15 +22,25 @@ function generatePaymentIntentId(): string {
 
 /**
  * Processes checkout request and creates payment intent
+ * Handles empty storage gracefully without crashing
  * @param items - Array of checkout items with product IDs and quantities
  * @returns Checkout response with payment details or error
  * @throws {Error} If validation fails or products unavailable
  */
 export function processCheckout(items: CheckoutItem[]): CheckoutResponse {
+  // Check if storage is available
+  if (productsStorage.size === 0) {
+    console.error('Checkout failed: product storage is empty');
+    throw new Error(
+      'Product catalogue is currently unavailable. Unable to process checkout. Please try again later.'
+    );
+  }
+
   // Validate all items first
   for (const item of items) {
     const availability = checkProductAvailability(item.productId, item.quantity);
     if (!availability.available) {
+      console.warn(`Checkout validation failed for ${item.productId}: ${availability.error}`);
       throw new Error(`${item.productId}: ${availability.error}`);
     }
   }
@@ -38,6 +53,7 @@ export function processCheckout(items: CheckoutItem[]): CheckoutResponse {
     const product = getProductById(item.productId);
 
     if (!product) {
+      console.error(`Checkout failed: product ${item.productId} not found during processing`);
       throw new Error(`Product ${item.productId} not found`);
     }
 
@@ -60,12 +76,28 @@ export function processCheckout(items: CheckoutItem[]): CheckoutResponse {
   };
 
   // Update inventory for all items
-  for (const item of items) {
-    const updated = updateProductInventory(item.productId, item.quantity);
-    if (!updated) {
-      throw new Error(`Failed to update inventory for ${item.productId}`);
+  const inventoryUpdates: Array<{ productId: string; quantity: number }> = [];
+  
+  try {
+    for (const item of items) {
+      const updated = updateProductInventory(item.productId, item.quantity);
+      
+      if (!updated) {
+        // Rollback previous inventory updates
+        console.error(`Inventory update failed for ${item.productId}, rolling back...`);
+        rollbackInventoryUpdates(inventoryUpdates);
+        throw new Error(`Failed to update inventory for ${item.productId}`);
+      }
+      
+      inventoryUpdates.push({ productId: item.productId, quantity: item.quantity });
     }
+  } catch (error) {
+    // Ensure rollback happened
+    rollbackInventoryUpdates(inventoryUpdates);
+    throw error;
   }
+
+  console.log(`Checkout successful: ${items.length} items, total: £${totalAmount.toFixed(2)}`);
 
   return {
     success: true,
@@ -74,6 +106,29 @@ export function processCheckout(items: CheckoutItem[]): CheckoutResponse {
     paymentIntent,
     items: responseItems,
   };
+}
+
+/**
+ * Rolls back inventory updates in case of checkout failure
+ * @param updates - Array of inventory updates to rollback
+ */
+function rollbackInventoryUpdates(
+  updates: Array<{ productId: string; quantity: number }>
+): void {
+  if (updates.length === 0) {
+    return;
+  }
+
+  console.warn(`Rolling back ${updates.length} inventory updates`);
+
+  for (const update of updates) {
+    const product = productsStorage.get(update.productId);
+    if (product) {
+      product.inventory += update.quantity; // Add back the quantity
+      productsStorage.set(update.productId, product);
+      console.log(`Rolled back inventory for ${update.productId}: +${update.quantity}`);
+    }
+  }
 }
 
 /**

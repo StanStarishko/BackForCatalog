@@ -8,6 +8,7 @@ import type { CatalogueResponse, PaginationQuery, Product } from '../types/index
 
 /**
  * Retrieves paginated catalogue of active products
+ * Works correctly even with empty storage
  * @param paginationQuery - Pagination parameters (page and limit)
  * @returns Paginated catalogue response with products and metadata
  */
@@ -17,6 +18,21 @@ export function getCatalogue(paginationQuery: PaginationQuery): CatalogueRespons
 
   // Filter only active products
   const activeProducts: Product[] = [];
+  
+  // Handle empty storage gracefully
+  if (productsStorage.size === 0) {
+    console.warn('Product storage is empty - returning empty catalogue');
+    return {
+      products: [],
+      pagination: {
+        currentPage: page,
+        totalPages: 0,
+        totalItems: 0,
+        itemsPerPage: limit,
+      },
+    };
+  }
+
   for (const product of productsStorage.values()) {
     if (product.status === 'active') {
       activeProducts.push(product);
@@ -49,9 +65,19 @@ export function getCatalogue(paginationQuery: PaginationQuery): CatalogueRespons
  * @returns Product if found and active, null otherwise
  */
 export function getProductById(productId: string): Product | null {
+  // Handle empty storage
+  if (productsStorage.size === 0) {
+    console.warn(`Product lookup failed: storage is empty (productId: ${productId})`);
+    return null;
+  }
+
   const product = productsStorage.get(productId);
 
-  if (!product || product.status !== 'active') {
+  if (!product) {
+    return null;
+  }
+
+  if (product.status !== 'active') {
     return null;
   }
 
@@ -68,6 +94,14 @@ export function checkProductAvailability(
   productId: string,
   requestedQuantity: number
 ): { available: boolean; error?: string } {
+  // Handle empty storage
+  if (productsStorage.size === 0) {
+    return {
+      available: false,
+      error: 'Product catalogue is currently unavailable. Please try again later.',
+    };
+  }
+
   const product = productsStorage.get(productId);
 
   if (!product) {
@@ -95,14 +129,30 @@ export function checkProductAvailability(
  * @returns True if update successful, false otherwise
  */
 export function updateProductInventory(productId: string, quantity: number): boolean {
+  // Handle empty storage
+  if (productsStorage.size === 0) {
+    console.error(`Inventory update failed: storage is empty (productId: ${productId})`);
+    return false;
+  }
+
   const product = productsStorage.get(productId);
 
   if (!product) {
+    console.error(`Inventory update failed: product not found (productId: ${productId})`);
+    return false;
+  }
+
+  // Validate inventory before update
+  if (product.inventory < quantity) {
+    console.error(
+      `Inventory update failed: insufficient stock (productId: ${productId}, available: ${product.inventory}, requested: ${quantity})`
+    );
     return false;
   }
 
   product.inventory -= quantity;
   productsStorage.set(productId, product);
 
+  console.log(`Inventory updated: ${productId} - reduced by ${quantity} (remaining: ${product.inventory})`);
   return true;
 }
