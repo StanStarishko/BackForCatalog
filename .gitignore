@@ -11,6 +11,9 @@ dist/
 build/
 *.tsbuildinfo
 
+# Check
+.biomeignore
+
 # Environment variables
 .env
 .env.local
@@ -28,6 +31,8 @@ pino-debug.log*
 # Testing
 coverage/
 .nyc_output/
+lint*
+validation-lines.txt
 
 # IDE
 .vscode/

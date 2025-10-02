@@ -1,0 +1,32 @@
+[
+	{
+		"id": "prod_1",
+		"title": "T-Shirt Classic",
+		"status": "active",
+		"price": 19.99,
+		"inventory": 24,
+		"variants": [
+			{ "id": "var_1_s", "title": "S" },
+			{ "id": "var_1_m", "title": "M" }
+		]
+	},
+	{
+		"id": "prod_2",
+		"title": "Hoodie Premium",
+		"status": "active",
+		"price": 49.5,
+		"inventory": 5,
+		"variants": [
+			{ "id": "var_2_m", "title": "M" },
+			{ "id": "var_2_l", "title": "L" }
+		]
+	},
+	{
+		"id": "prod_3",
+		"title": "Cap",
+		"status": "draft",
+		"price": 15,
+		"inventory": 100,
+		"variants": []
+	}
+]
