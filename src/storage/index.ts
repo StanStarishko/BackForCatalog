@@ -3,16 +3,16 @@
  * Provides fast key-value access for products, users, and authorization codes
  */
 
-import { readFileSync } from "node:fs";
-import { join } from "node:path";
+import { readFileSync } from 'node:fs';
+import { join } from 'node:path';
 import type {
-	AuthCodeStorage,
-	AuthorizationCode,
-	Product,
-	ProductStorage,
-	User,
-	UserStorage,
-} from "../types/index.js";
+  AuthCodeStorage,
+  AuthorizationCode,
+  Product,
+  ProductStorage,
+  User,
+  UserStorage,
+} from '../types/index.js';
 
 // ==================== Storage Instances ====================
 
@@ -29,10 +29,7 @@ export const usersStorage: UserStorage = new Map<string, User>();
 /**
  * Authorization codes storage - Maps code to AuthorizationCode entity
  */
-export const authCodesStorage: AuthCodeStorage = new Map<
-	string,
-	AuthorizationCode
->();
+export const authCodesStorage: AuthCodeStorage = new Map<string, AuthorizationCode>();
 
 // ==================== Initialization Functions ====================
 
@@ -41,32 +38,32 @@ export const authCodesStorage: AuthCodeStorage = new Map<
  * @throws {Error} If file cannot be read or parsed
  */
 export function loadInitialProducts(): void {
-	try {
-		const dataPath = join(process.cwd(), "data", "products.json");
-		const fileContent = readFileSync(dataPath, "utf-8");
-		const products: Product[] = JSON.parse(fileContent);
+  try {
+    const dataPath = join(process.cwd(), 'data', 'products.json');
+    const fileContent = readFileSync(dataPath, 'utf-8');
+    const products: Product[] = JSON.parse(fileContent);
 
-		// Clear existing data and load new products
-		productsStorage.clear();
+    // Clear existing data and load new products
+    productsStorage.clear();
 
-		for (const product of products) {
-			productsStorage.set(product.id, product);
-		}
+    for (const product of products) {
+      productsStorage.set(product.id, product);
+    }
 
-		console.log(`Loaded ${productsStorage.size} products into storage`);
-	} catch (error) {
-		console.error("Failed to load initial products:", error);
-		throw new Error("Could not initialise product storage");
-	}
+    console.log(`Loaded ${productsStorage.size} products into storage`);
+  } catch (error) {
+    console.error('Failed to load initial products:', error);
+    throw new Error('Could not initialise product storage');
+  }
 }
 
 /**
  * Clears all storage (useful for testing)
  */
 export function clearAllStorage(): void {
-	productsStorage.clear();
-	usersStorage.clear();
-	authCodesStorage.clear();
+  productsStorage.clear();
+  usersStorage.clear();
+  authCodesStorage.clear();
 }
 
 /**
@@ -74,15 +71,15 @@ export function clearAllStorage(): void {
  * @returns Object containing counts of stored entities
  */
 export function getStorageStats(): {
-	products: number;
-	users: number;
-	authCodes: number;
+  products: number;
+  users: number;
+  authCodes: number;
 } {
-	return {
-		products: productsStorage.size,
-		users: usersStorage.size,
-		authCodes: authCodesStorage.size,
-	};
+  return {
+    products: productsStorage.size,
+    users: usersStorage.size,
+    authCodes: authCodesStorage.size,
+  };
 }
 
 // ==================== Cleanup Functions ====================
@@ -93,21 +90,21 @@ export function getStorageStats(): {
  * @returns Number of expired codes removed
  */
 export function cleanupExpiredAuthCodes(): number {
-	const now = new Date();
-	let removedCount = 0;
+  const now = new Date();
+  let removedCount = 0;
 
-	for (const [code, authCode] of authCodesStorage.entries()) {
-		if (authCode.expiresAt < now || authCode.used) {
-			authCodesStorage.delete(code);
-			removedCount++;
-		}
-	}
+  for (const [code, authCode] of authCodesStorage.entries()) {
+    if (authCode.expiresAt < now || authCode.used) {
+      authCodesStorage.delete(code);
+      removedCount++;
+    }
+  }
 
-	if (removedCount > 0) {
-		console.log(`Cleaned up ${removedCount} expired/used authorization codes`);
-	}
+  if (removedCount > 0) {
+    console.log(`Cleaned up ${removedCount} expired/used authorization codes`);
+  }
 
-	return removedCount;
+  return removedCount;
 }
 
 /**
@@ -116,8 +113,8 @@ export function cleanupExpiredAuthCodes(): number {
  * @returns Interval ID for potential cleanup
  */
 export function startAuthCodeCleanup(): NodeJS.Timeout {
-	const cleanupInterval = 5 * 60 * 1000; // 5 minutes
-	return setInterval(() => {
-		cleanupExpiredAuthCodes();
-	}, cleanupInterval);
+  const cleanupInterval = 5 * 60 * 1000; // 5 minutes
+  return setInterval(() => {
+    cleanupExpiredAuthCodes();
+  }, cleanupInterval);
 }

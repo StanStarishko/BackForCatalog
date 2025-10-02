@@ -3,9 +3,9 @@
  * Provides secure token handling with modern cryptographic standards
  */
 
-import { SignJWT, jwtVerify } from "jose";
-import type { JwtPayload } from "../types/index.js";
-import { loadConfig, parseDuration } from "./config.js";
+import { SignJWT, jwtVerify } from 'jose';
+import type { JwtPayload } from '../types/index.js';
+import { loadConfig, parseDuration } from './config.js';
 
 const config = loadConfig();
 
@@ -15,7 +15,7 @@ const config = loadConfig();
  * @returns Uint8Array representation of the secret
  */
 function getSecretKey(secret: string): Uint8Array {
-	return new TextEncoder().encode(secret);
+  return new TextEncoder().encode(secret);
 }
 
 /**
@@ -24,23 +24,23 @@ function getSecretKey(secret: string): Uint8Array {
  * @returns Signed JWT token string
  */
 export async function generateAccessToken(email: string): Promise<string> {
-	const secretKey = getSecretKey(config.jwtSecret);
-	const expirationMs = parseDuration(config.jwtExpiration);
-	const expirationSeconds = Math.floor(expirationMs / 1000);
+  const secretKey = getSecretKey(config.jwtSecret);
+  const expirationMs = parseDuration(config.jwtExpiration);
+  const expirationSeconds = Math.floor(expirationMs / 1000);
 
-	const payload: Omit<JwtPayload, "iat" | "exp"> = {
-		sub: email,
-		iss: config.jwtIssuer,
-		aud: config.jwtAudience,
-	};
+  const payload: Omit<JwtPayload, 'iat' | 'exp'> = {
+    sub: email,
+    iss: config.jwtIssuer,
+    aud: config.jwtAudience,
+  };
 
-	const token = await new SignJWT(payload)
-		.setProtectedHeader({ alg: "HS256" })
-		.setIssuedAt()
-		.setExpirationTime(`${expirationSeconds}s`)
-		.sign(secretKey);
+  const token = await new SignJWT(payload)
+    .setProtectedHeader({ alg: 'HS256' })
+    .setIssuedAt()
+    .setExpirationTime(`${expirationSeconds}s`)
+    .sign(secretKey);
 
-	return token;
+  return token;
 }
 
 /**
@@ -50,21 +50,21 @@ export async function generateAccessToken(email: string): Promise<string> {
  * @throws {Error} If token is invalid or expired
  */
 export async function verifyAccessToken(token: string): Promise<JwtPayload> {
-	try {
-		const secretKey = getSecretKey(config.jwtSecret);
+  try {
+    const secretKey = getSecretKey(config.jwtSecret);
 
-		const { payload } = await jwtVerify(token, secretKey, {
-			issuer: config.jwtIssuer,
-			audience: config.jwtAudience,
-		});
+    const { payload } = await jwtVerify(token, secretKey, {
+      issuer: config.jwtIssuer,
+      audience: config.jwtAudience,
+    });
 
-		return payload as JwtPayload;
-	} catch (error) {
-		if (error instanceof Error) {
-			throw new Error(`Token verification failed: ${error.message}`);
-		}
-		throw new Error("Token verification failed: Unknown error");
-	}
+    return payload as JwtPayload;
+  } catch (error) {
+    if (error instanceof Error) {
+      throw new Error(`Token verification failed: ${error.message}`);
+    }
+    throw new Error('Token verification failed: Unknown error');
+  }
 }
 
 /**
@@ -72,19 +72,17 @@ export async function verifyAccessToken(token: string): Promise<JwtPayload> {
  * @param authHeader - Authorization header value (e.g., "Bearer token123")
  * @returns Extracted token or null if invalid format
  */
-export function extractTokenFromHeader(
-	authHeader: string | undefined,
-): string | null {
-	if (!authHeader) {
-		return null;
-	}
+export function extractTokenFromHeader(authHeader: string | undefined): string | null {
+  if (!authHeader) {
+    return null;
+  }
 
-	const parts = authHeader.split(" ");
-	if (parts.length !== 2 || parts[0] !== "Bearer") {
-		return null;
-	}
+  const parts = authHeader.split(' ');
+  if (parts.length !== 2 || parts[0] !== 'Bearer') {
+    return null;
+  }
 
-	return parts[1] ?? null;
+  return parts[1] ?? null;
 }
 
 /**
@@ -92,6 +90,6 @@ export function extractTokenFromHeader(
  * @returns Number of seconds until token expires
  */
 export function getTokenExpirationSeconds(): number {
-	const expirationMs = parseDuration(config.jwtExpiration);
-	return Math.floor(expirationMs / 1000);
+  const expirationMs = parseDuration(config.jwtExpiration);
+  return Math.floor(expirationMs / 1000);
 }
