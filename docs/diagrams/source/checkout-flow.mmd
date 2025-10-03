@@ -1,0 +1,64 @@
+%%{init: {'theme':'base', 'themeVariables': {'fontSize':'18px'}}}%%
+flowchart LR
+    Start([POST /checkout<br/>with Items]) --> CheckAuth{" <br/> JWT Token<br/>Valid? <br/> <br/> "}
+    
+    CheckAuth -->|Invalid| Err1[401<br/>Unauthorized]
+    
+    CheckAuth -->|Valid| ValidateItems{" <br/> Items Array<br/>Valid? <br/> <br/> "}
+    
+    ValidateItems -->|Empty<br/>or Too Many| Err2[400<br/>Bad Request<br/>Items Invalid]
+    
+    ValidateItems -->|Valid| ItemCheck{" <br/> Each Item<br/>Format OK? <br/> <br/> "}
+    
+    ItemCheck -->|Invalid| Err3[400<br/>Bad Request<br/>Item Format]
+    
+    ItemCheck -->|Valid| ProductExists{" <br/> Products<br/>Exist? <br/> <br/> "}
+    
+    ProductExists -->|Not Found| Err4[400<br/>Bad Request<br/>Product Missing]
+    
+    ProductExists -->|Exist| CheckActive{" <br/> Products<br/>Active? <br/> <br/> "}
+    
+    CheckActive -->|Inactive| Err5[400<br/>Bad Request<br/>Not Available]
+    
+    CheckActive -->|Active| CheckInventory{" <br/> Sufficient<br/>Stock? <br/> <br/> "}
+    
+    CheckInventory -->|Insufficient| Err6[400<br/>Bad Request<br/>Low Stock]
+    
+    CheckInventory -->|Sufficient| CalculateTotal{" <br/> Calculate<br/>Total? <br/> <br/> "}
+    
+    CalculateTotal -->|Success| CreateIntent[Create Payment<br/>Intent: Pending]
+    
+    CreateIntent --> UpdateInventory[Update<br/>Inventory<br/>Deduct Stock]
+    
+    UpdateInventory --> Success[200 OK<br/>Payment Intent<br/>Returned]
+    
+    Success --> End([End])
+    Err1 --> End
+    Err2 --> End
+    Err3 --> End
+    Err4 --> End
+    Err5 --> End
+    Err6 --> End
+    
+    style Start fill:#e1f5e1,stroke:#2d5016,stroke-width:4px,font-size:18px
+    style Success fill:#e1f5e1,stroke:#2d5016,stroke-width:4px,font-size:18px
+    style End fill:#e1f5e1,stroke:#2d5016,stroke-width:4px,font-size:18px
+    
+    style Err1 fill:#ffe1e1,stroke:#8b0000,stroke-width:3px,font-size:16px
+    style Err2 fill:#ffe1e1,stroke:#8b0000,stroke-width:3px,font-size:16px
+    style Err3 fill:#ffe1e1,stroke:#8b0000,stroke-width:3px,font-size:16px
+    style Err4 fill:#ffe1e1,stroke:#8b0000,stroke-width:3px,font-size:16px
+    style Err5 fill:#ffe1e1,stroke:#8b0000,stroke-width:3px,font-size:16px
+    style Err6 fill:#ffe1e1,stroke:#8b0000,stroke-width:3px,font-size:16px
+    
+    style CalculateTotal fill:#e1f0ff,stroke:#003d82,stroke-width:4px,font-size:18px
+    style CreateIntent fill:#e1f0ff,stroke:#003d82,stroke-width:4px,font-size:18px
+    
+    style UpdateInventory fill:#fff4e1,stroke:#8b6914,stroke-width:4px,font-size:18px
+    
+    style CheckAuth stroke-width:4px,font-size:18px
+    style ValidateItems stroke-width:4px,font-size:18px
+    style ItemCheck stroke-width:4px,font-size:18px
+    style ProductExists stroke-width:4px,font-size:18px
+    style CheckActive stroke-width:4px,font-size:18px
+    style CheckInventory stroke-width:4px,font-size:18px

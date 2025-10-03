@@ -1,0 +1,588 @@
+openapi: 3.0.3
+info:
+  title: BackForCatalog API
+  description: |
+    Node.js backend for React Native e-commerce application with OAuth-based authentication and Shopify integration.
+    
+    ## Features
+    - Product catalogue with pagination
+    - Checkout with inventory management
+    - OAuth 2.0 authentication flow (email-based)
+    - JWT token generation and validation
+    - Rate limiting and request validation
+    
+    ## Authentication Flow
+    1. **Login**: POST `/auth/login` with email → receive authorization code
+    2. **Token Exchange**: POST `/auth/token` with code → receive JWT access token
+    3. **Protected Requests**: Use JWT in Authorization header for protected endpoints
+    
+  version: 1.0.0
+  contact:
+    name: API Support
+  license:
+    name: MIT
+
+servers:
+  - url: http://localhost:3000
+    description: Local development server
+  - url: https://your-production-url.vercel.app
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: OAuth 2.0 authentication endpoints
+  - name: Catalogue
+    description: Product catalogue operations
+  - name: Checkout
+    description: Order processing and checkout
+  - name: Health
+    description: Health check endpoint
+
+paths:
+  /health:
+    get:
+      tags:
+        - Health
+      summary: Health check
+      description: Returns the health status of the API server
+      operationId: healthCheck
+      responses:
+        '200':
+          description: Service is healthy
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  status:
+                    type: string
+                    example: healthy
+                  timestamp:
+                    type: string
+                    format: date-time
+                    example: '2025-10-03T12:00:00.000Z'
+
+  /catalog:
+    get:
+      tags:
+        - Catalogue
+      summary: Get product catalogue
+      description: |
+        Retrieves a paginated list of active products from the catalogue.
+        
+        **Default Values:**
+        - page: 1
+        - limit: 10
+        
+        **Constraints:**
+        - page must be a positive integer
+        - limit must be between 1 and 100
+      operationId: getCatalogue
+      parameters:
+        - name: page
+          in: query
+          description: Page number for pagination (starts at 1)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+            example: 1
+        - name: limit
+          in: query
+          description: Number of items per page (max 100)
+          required: false
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 10
+            example: 10
+      responses:
+        '200':
+          description: Successful response with paginated products
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CatalogueResponse'
+        '400':
+          description: Invalid query parameters
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidPage:
+                  value:
+                    error:
+                      code: INVALID_QUERY
+                      message: Page must be a positive integer
+                invalidLimit:
+                  value:
+                    error:
+                      code: INVALID_QUERY
+                      message: Limit must be between 1 and 100
+
+  /checkout:
+    post:
+      tags:
+        - Checkout
+      summary: Process checkout
+      description: |
+        Processes a checkout request with validation, inventory checks, and payment intent creation.
+        
+        **Required Authentication:** JWT token in Authorization header
+        
+        **Process:**
+        1. Validates JWT token
+        2. Validates items array (1-50 items)
+        3. Checks product availability and inventory
+        4. Calculates total amount
+        5. Creates payment intent
+        6. Updates inventory
+      operationId: processCheckout
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CheckoutRequest'
+            examples:
+              singleItem:
+                summary: Single item checkout
+                value:
+                  items:
+                    - productId: prod_1
+                      quantity: 2
+              multipleItems:
+                summary: Multiple items checkout
+                value:
+                  items:
+                    - productId: prod_1
+                      quantity: 2
+                    - productId: prod_2
+                      quantity: 1
+      responses:
+        '200':
+          description: Checkout successful
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CheckoutResponse'
+        '400':
+          description: Bad request (invalid items, insufficient inventory, etc.)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                emptyItems:
+                  value:
+                    error:
+                      code: INVALID_REQUEST
+                      message: Items array cannot be empty
+                productNotFound:
+                  value:
+                    error:
+                      code: CHECKOUT_FAILED
+                      message: 'prod_999: Product not found'
+                insufficientInventory:
+                  value:
+                    error:
+                      code: CHECKOUT_FAILED
+                      message: 'prod_1: Insufficient inventory. Available: 5, Requested: 10'
+        '401':
+          description: Unauthorized (missing or invalid JWT token)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                missingToken:
+                  value:
+                    error:
+                      code: UNAUTHORIZED
+                      message: 'Missing or invalid Authorization header. Expected format: Bearer <token>'
+                invalidToken:
+                  value:
+                    error:
+                      code: UNAUTHORIZED
+                      message: 'Token verification failed: Invalid signature'
+
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Initiate OAuth login
+      description: |
+        Initiates the OAuth 2.0 authentication flow by generating an authorization code.
+        
+        **Process:**
+        1. Validates email format
+        2. Creates user if not exists (auto-registration)
+        3. Generates cryptographically secure authorization code (32 bytes)
+        4. Stores code with 10-minute expiration
+        5. Returns code to client
+        
+        **Next Step:** Exchange code for JWT token via `/auth/token`
+      operationId: login
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+            examples:
+              validEmail:
+                value:
+                  email: user@example.com
+      responses:
+        '200':
+          description: Authorization code generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid request (invalid email format)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidEmail:
+                  value:
+                    error:
+                      code: INVALID_REQUEST
+                      message: Invalid email format
+                emptyEmail:
+                  value:
+                    error:
+                      code: INVALID_REQUEST
+                      message: Email cannot be empty
+
+  /auth/token:
+    post:
+      tags:
+        - Authentication
+      summary: Exchange authorization code for JWT token
+      description: |
+        Exchanges a valid authorization code for a JWT access token.
+        
+        **Process:**
+        1. Validates authorization code exists
+        2. Checks if code has already been used
+        3. Checks if code has expired
+        4. Marks code as used (one-time use)
+        5. Generates JWT token with HS256 algorithm
+        6. Returns JWT token with 1-hour expiration
+        
+        **Token Usage:** Include token in Authorization header as `Bearer <token>`
+      operationId: exchangeToken
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/TokenRequest'
+            examples:
+              validCode:
+                value:
+                  code: abc123def456ghi789jkl012mno345pqr
+      responses:
+        '200':
+          description: JWT token generated successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/TokenResponse'
+        '400':
+          description: Invalid, expired, or already used authorization code
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+              examples:
+                invalidCode:
+                  value:
+                    error:
+                      code: INVALID_CODE
+                      message: Invalid authorization code
+                codeUsed:
+                  value:
+                    error:
+                      code: INVALID_CODE
+                      message: Authorization code has already been used
+                codeExpired:
+                  value:
+                    error:
+                      code: INVALID_CODE
+                      message: Authorization code has expired
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT token obtained from `/auth/token` endpoint
+
+  schemas:
+    Product:
+      type: object
+      required:
+        - id
+        - title
+        - status
+        - price
+        - inventory
+        - variants
+      properties:
+        id:
+          type: string
+          description: Unique product identifier
+          example: prod_1
+        title:
+          type: string
+          description: Product title
+          example: T-Shirt Classic
+        status:
+          type: string
+          enum: [active, draft, archived]
+          description: Product status
+          example: active
+        price:
+          type: number
+          format: float
+          description: Product price in GBP
+          example: 19.99
+        inventory:
+          type: integer
+          description: Available inventory quantity
+          example: 24
+        variants:
+          type: array
+          description: Product variants (e.g., sizes, colours)
+          items:
+            type: object
+            properties:
+              id:
+                type: string
+                example: var_1_s
+              title:
+                type: string
+                example: S
+
+    CatalogueResponse:
+      type: object
+      required:
+        - products
+        - pagination
+      properties:
+        products:
+          type: array
+          description: Array of active products
+          items:
+            $ref: '#/components/schemas/Product'
+        pagination:
+          type: object
+          required:
+            - currentPage
+            - totalPages
+            - totalItems
+            - itemsPerPage
+          properties:
+            currentPage:
+              type: integer
+              description: Current page number
+              example: 1
+            totalPages:
+              type: integer
+              description: Total number of pages
+              example: 3
+            totalItems:
+              type: integer
+              description: Total number of items
+              example: 25
+            itemsPerPage:
+              type: integer
+              description: Number of items per page
+              example: 10
+
+    CheckoutRequest:
+      type: object
+      required:
+        - items
+      properties:
+        items:
+          type: array
+          description: Array of items to checkout (1-50 items)
+          minItems: 1
+          maxItems: 50
+          items:
+            type: object
+            required:
+              - productId
+              - quantity
+            properties:
+              productId:
+                type: string
+                description: Product identifier
+                example: prod_1
+              quantity:
+                type: integer
+                minimum: 1
+                maximum: 1000
+                description: Quantity to purchase
+                example: 2
+
+    CheckoutResponse:
+      type: object
+      required:
+        - success
+        - totalAmount
+        - currency
+        - paymentIntent
+        - items
+      properties:
+        success:
+          type: boolean
+          description: Whether checkout was successful
+          example: true
+        totalAmount:
+          type: number
+          format: float
+          description: Total amount to be paid
+          example: 69.48
+        currency:
+          type: string
+          description: Currency code
+          example: GBP
+        paymentIntent:
+          type: object
+          required:
+            - id
+            - status
+            - amount
+          properties:
+            id:
+              type: string
+              description: Payment intent identifier
+              example: pi_1a2b3c4d5e6f7g8h9i0j1k2l3m4n5o6p
+            status:
+              type: string
+              enum: [pending, succeeded, failed]
+              description: Payment intent status
+              example: pending
+            amount:
+              type: number
+              format: float
+              description: Payment amount
+              example: 69.48
+        items:
+          type: array
+          description: Processed items with pricing details
+          items:
+            type: object
+            required:
+              - productId
+              - quantity
+              - unitPrice
+              - subtotal
+            properties:
+              productId:
+                type: string
+                example: prod_1
+              quantity:
+                type: integer
+                example: 2
+              unitPrice:
+                type: number
+                format: float
+                example: 19.99
+              subtotal:
+                type: number
+                format: float
+                example: 39.98
+
+    LoginRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+          description: User email address
+          example: user@example.com
+
+    LoginResponse:
+      type: object
+      required:
+        - authorizationCode
+        - expiresIn
+      properties:
+        authorizationCode:
+          type: string
+          description: Authorization code to exchange for JWT token
+          example: abc123def456ghi789jkl012mno345pqr
+        expiresIn:
+          type: integer
+          description: Code expiration time in seconds
+          example: 600
+
+    TokenRequest:
+      type: object
+      required:
+        - code
+      properties:
+        code:
+          type: string
+          description: Authorization code from login endpoint
+          example: abc123def456ghi789jkl012mno345pqr
+
+    TokenResponse:
+      type: object
+      required:
+        - accessToken
+        - tokenType
+        - expiresIn
+      properties:
+        accessToken:
+          type: string
+          description: JWT access token
+          example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...
+        tokenType:
+          type: string
+          description: Token type (always Bearer)
+          example: Bearer
+        expiresIn:
+          type: integer
+          description: Token expiration time in seconds
+          example: 3600
+
+    ErrorResponse:
+      type: object
+      required:
+        - error
+      properties:
+        error:
+          type: object
+          required:
+            - code
+            - message
+          properties:
+            code:
+              type: string
+              description: Error code
+              example: INVALID_REQUEST
+            message:
+              type: string
+              description: Human-readable error message
+              example: Invalid email format
+            details:
+              type: object
+              description: Additional error details (optional)
+              additionalProperties: true

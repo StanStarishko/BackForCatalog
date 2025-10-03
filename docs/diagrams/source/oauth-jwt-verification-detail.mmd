@@ -1,0 +1,57 @@
+%%{init: {'theme':'base', 'themeVariables': {'fontSize':'18px'}}}%%
+flowchart LR
+    Start([Protected Endpoint<br/>Called]) --> CheckHeader{" <br/> Auth Header<br/>Present? <br/> <br/> "}
+    
+    CheckHeader -->|Missing| Err1[401 Unauthorized<br/>Missing Header]
+    
+    CheckHeader -->|Present| CheckFormat{" <br/> Bearer<br/>Format? <br/> <br/> "}
+    
+    CheckFormat -->|Invalid| Err2[401 Unauthorized<br/>Invalid Format]
+    
+    CheckFormat -->|Valid| ExtractToken[Extract<br/>JWT Token]
+    
+    ExtractToken --> VerifySign{" <br/> Signature<br/>Valid? <br/> <br/> "}
+    
+    VerifySign -->|Invalid| Err3[401 Unauthorized<br/>Bad Signature]
+    
+    VerifySign -->|Valid| CheckExpiry{" <br/> Token<br/>Expired? <br/> <br/> "}
+    
+    CheckExpiry -->|Yes| Err4[401 Unauthorized<br/>Token Expired]
+    
+    CheckExpiry -->|No| CheckClaims{" <br/> Claims<br/>Valid? <br/> <br/> "}
+    
+    CheckClaims -->|Invalid| Err5[401 Unauthorized<br/>Bad Claims]
+    
+    CheckClaims -->|Valid| AttachUser[Attach User<br/>to Request]
+    
+    AttachUser --> Process[Process<br/>Request]
+    
+    Process --> Success([Success])
+    
+    Err1 --> End([End])
+    Err2 --> End
+    Err3 --> End
+    Err4 --> End
+    Err5 --> End
+    Success --> End
+    
+    style Start fill:#e1f5e1,stroke:#2d5016,stroke-width:4px,font-size:18px
+    style Success fill:#e1f5e1,stroke:#2d5016,stroke-width:4px,font-size:18px
+    style End fill:#e1f5e1,stroke:#2d5016,stroke-width:4px,font-size:18px
+    
+    style Err1 fill:#ffe1e1,stroke:#8b0000,stroke-width:3px,font-size:16px
+    style Err2 fill:#ffe1e1,stroke:#8b0000,stroke-width:3px,font-size:16px
+    style Err3 fill:#ffe1e1,stroke:#8b0000,stroke-width:3px,font-size:16px
+    style Err4 fill:#ffe1e1,stroke:#8b0000,stroke-width:3px,font-size:16px
+    style Err5 fill:#ffe1e1,stroke:#8b0000,stroke-width:3px,font-size:16px
+    
+    style VerifySign fill:#e1f0ff,stroke:#003d82,stroke-width:4px,font-size:18px
+    
+    style ExtractToken fill:#fff4e1,stroke:#8b6914,stroke-width:3px,font-size:16px
+    style AttachUser fill:#fff4e1,stroke:#8b6914,stroke-width:4px,font-size:18px
+    style Process fill:#fff4e1,stroke:#8b6914,stroke-width:3px,font-size:16px
+    
+    style CheckHeader stroke-width:4px,font-size:18px
+    style CheckFormat stroke-width:4px,font-size:18px
+    style CheckExpiry stroke-width:4px,font-size:18px
+    style CheckClaims stroke-width:4px,font-size:18px

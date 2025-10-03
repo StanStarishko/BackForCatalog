@@ -1,0 +1,35 @@
+%%{init: {'theme':'base', 'themeVariables': {'fontSize':'18px'}}}%%
+flowchart LR
+    Start([POST /auth/login<br/>Email Received]) --> ValidateEmail{" <br/> Email Format<br/>Valid? <br/> <br/> "}
+    
+    ValidateEmail -->|Invalid<br/>Format| Err1[400 Bad Request<br/>Invalid Email]
+    
+    ValidateEmail -->|Valid<br/>Format| CheckUser{" <br/> User<br/>Exists? <br/> <br/> "}
+    
+    CheckUser -->|Not Found| CreateUser[Create New User<br/>Auto-Registration]
+    CheckUser -->|Found| GetUser[Retrieve<br/>Existing User]
+    
+    CreateUser --> GenCode[Generate<br/>Auth Code<br/>32 bytes]
+    GetUser --> GenCode
+    
+    GenCode --> StoreCode[Store Code<br/>in Storage<br/>Expires: 10 min]
+    
+    StoreCode --> Success[200 OK<br/>Return<br/>Auth Code]
+    
+    Success --> End([End])
+    Err1 --> End
+    
+    style Start fill:#e1f5e1,stroke:#2d5016,stroke-width:4px,font-size:18px
+    style Success fill:#e1f5e1,stroke:#2d5016,stroke-width:4px,font-size:18px
+    style End fill:#e1f5e1,stroke:#2d5016,stroke-width:4px,font-size:18px
+    
+    style Err1 fill:#ffe1e1,stroke:#8b0000,stroke-width:3px,font-size:16px
+    
+    style GenCode fill:#e1f0ff,stroke:#003d82,stroke-width:4px,font-size:18px
+    style StoreCode fill:#fff4e1,stroke:#8b6914,stroke-width:4px,font-size:18px
+    
+    style CreateUser fill:#fff4e1,stroke:#8b6914,stroke-width:3px,font-size:16px
+    style GetUser fill:#fff4e1,stroke:#8b6914,stroke-width:3px,font-size:16px
+    
+    style ValidateEmail stroke-width:4px,font-size:18px
+    style CheckUser stroke-width:4px,font-size:18px

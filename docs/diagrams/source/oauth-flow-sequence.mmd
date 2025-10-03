@@ -1,0 +1,39 @@
+%%{init: {'theme':'base', 'themeVariables': { 'fontSize':'26px', 'fontFamily':'arial'}}}%%
+sequenceDiagram
+    participant U as User
+    participant F as Frontend
+    participant B as Backend
+    participant S as Storage
+
+    rect rgb(225, 245, 225)
+    Note over U,S: LOGIN PHASE
+    U->>F: Enter Email
+    F->>B: POST /auth/login
+    B->>S: Check User
+    S-->>B: User Data
+    B->>B: Generate Code
+    B->>S: Store Code
+    B-->>F: Auth Code
+    F-->>U: Ready
+    end
+
+    rect rgb(255, 244, 225)
+    Note over U,S: TOKEN PHASE
+    U->>F: Continue
+    F->>B: POST /auth/token
+    B->>S: Get Code
+    S-->>B: Code Data
+    B->>B: Generate JWT
+    B-->>F: Access Token
+    F-->>U: Success
+    end
+
+    rect rgb(225, 240, 255)
+    Note over U,S: PROTECTED ACCESS
+    U->>F: Request Action
+    F->>B: POST /checkout<br/>+ JWT Token
+    B->>B: Verify Token
+    B->>B: Process Request
+    B-->>F: Result
+    F-->>U: Done
+    end

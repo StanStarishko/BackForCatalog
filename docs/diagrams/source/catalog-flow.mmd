@@ -1,0 +1,52 @@
+%%{init: {'theme':'base', 'themeVariables': {'fontSize':'18px'}}}%%
+flowchart LR
+    Start([GET /catalog<br/>Query Params]) --> ExtractParams[Extract Query:<br/>page, limit]
+    
+    ExtractParams --> ValidatePage{" <br/> Page<br/>Valid? <br/> <br/> "}
+    
+    ValidatePage -->|Negative<br/>or Zero| Err1[400<br/>Bad Request<br/>Invalid Page]
+    
+    ValidatePage -->|Valid| ValidateLimit{" <br/> Limit<br/>Valid? <br/> <br/> "}
+    
+    ValidateLimit -->|Out of Range<br/>1-100| Err2[400<br/>Bad Request<br/>Invalid Limit]
+    
+    ValidateLimit -->|Valid| SetDefaults[Apply Defaults:<br/>page: 1<br/>limit: 10]
+    
+    SetDefaults --> FilterActive[Filter Products:<br/>status == active<br/>from Storage]
+    
+    FilterActive --> CheckProducts{" <br/> Products<br/>Found? <br/> <br/> "}
+    
+    CheckProducts -->|None| EmptyResult[200 OK<br/>Empty Array<br/>totalItems: 0]
+    
+    CheckProducts -->|Found| CalculatePagination[Calculate:<br/>totalPages<br/>startIndex<br/>endIndex]
+    
+    CalculatePagination --> SliceProducts[Slice Products:<br/>Get Page Items<br/>startIdx to endIdx]
+    
+    SliceProducts --> BuildResponse[Build Response:<br/>products array<br/>pagination metadata]
+    
+    BuildResponse --> Success[200 OK<br/>Products<br/>+ Pagination]
+    
+    Success --> End([End])
+    EmptyResult --> End
+    Err1 --> End
+    Err2 --> End
+    
+    style Start fill:#e1f5e1,stroke:#2d5016,stroke-width:4px,font-size:18px
+    style Success fill:#e1f5e1,stroke:#2d5016,stroke-width:4px,font-size:18px
+    style EmptyResult fill:#e1f5e1,stroke:#2d5016,stroke-width:4px,font-size:18px
+    style End fill:#e1f5e1,stroke:#2d5016,stroke-width:4px,font-size:18px
+    
+    style Err1 fill:#ffe1e1,stroke:#8b0000,stroke-width:3px,font-size:16px
+    style Err2 fill:#ffe1e1,stroke:#8b0000,stroke-width:3px,font-size:16px
+    
+    style ExtractParams fill:#fff4e1,stroke:#8b6914,stroke-width:4px,font-size:18px
+    style SetDefaults fill:#fff4e1,stroke:#8b6914,stroke-width:4px,font-size:18px
+    style FilterActive fill:#fff4e1,stroke:#8b6914,stroke-width:4px,font-size:18px
+    
+    style CalculatePagination fill:#e1f0ff,stroke:#003d82,stroke-width:4px,font-size:18px
+    style SliceProducts fill:#e1f0ff,stroke:#003d82,stroke-width:4px,font-size:18px
+    style BuildResponse fill:#e1f0ff,stroke:#003d82,stroke-width:4px,font-size:18px
+    
+    style ValidatePage stroke-width:4px,font-size:18px
+    style ValidateLimit stroke-width:4px,font-size:18px
+    style CheckProducts stroke-width:4px,font-size:18px

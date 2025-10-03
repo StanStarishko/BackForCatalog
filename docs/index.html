@@ -1,0 +1,427 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>BackForCatalog API Documentation</title>
+    <link rel="stylesheet" type="text/css" href="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            line-height: 1.6;
+            color: #333;
+            background: #f8f9fa;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            padding: 3rem 2rem;
+            text-align: center;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 0.5rem;
+            font-weight: 700;
+        }
+
+        .header p {
+            font-size: 1.2rem;
+            opacity: 0.95;
+        }
+
+        .nav {
+            background: white;
+            padding: 1rem 2rem;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+            position: sticky;
+            top: 0;
+            z-index: 1000;
+        }
+
+        .nav ul {
+            list-style: none;
+            display: flex;
+            flex-wrap: wrap;
+            gap: 1.5rem;
+            justify-content: center;
+        }
+
+        .nav a {
+            text-decoration: none;
+            color: #667eea;
+            font-weight: 600;
+            padding: 0.5rem 1rem;
+            border-radius: 6px;
+            transition: all 0.3s ease;
+        }
+
+        .nav a:hover {
+            background: #667eea;
+            color: white;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+            padding: 2rem;
+        }
+
+        .section {
+            background: white;
+            border-radius: 12px;
+            padding: 2.5rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .section h2 {
+            font-size: 2rem;
+            margin-bottom: 1rem;
+            color: #2d3748;
+            border-bottom: 3px solid #667eea;
+            padding-bottom: 0.5rem;
+        }
+
+        .section h3 {
+            font-size: 1.5rem;
+            margin-top: 2rem;
+            margin-bottom: 1rem;
+            color: #4a5568;
+        }
+
+        .section p {
+            margin-bottom: 1rem;
+            color: #4a5568;
+            font-size: 1.05rem;
+        }
+
+        .diagram {
+            margin: 2rem 0;
+            text-align: center;
+            background: #f7fafc;
+            border-radius: 8px;
+            padding: 2rem;
+        }
+
+        .diagram img {
+            max-width: 100%;
+            height: auto;
+            border-radius: 6px;
+            box-shadow: 0 4px 6px rgba(0,0,0,0.1);
+        }
+
+        .diagram-title {
+            font-size: 1.2rem;
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 1rem;
+        }
+
+        .swagger-section {
+            background: white;
+            border-radius: 12px;
+            padding: 1rem;
+            margin-bottom: 2rem;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.08);
+        }
+
+        .swagger-ui {
+            max-width: 100%;
+        }
+
+        .badge {
+            display: inline-block;
+            padding: 0.25rem 0.75rem;
+            border-radius: 12px;
+            font-size: 0.85rem;
+            font-weight: 600;
+            margin-right: 0.5rem;
+            margin-bottom: 0.5rem;
+        }
+
+        .badge-auth {
+            background: #e1f5e1;
+            color: #2d5016;
+        }
+
+        .badge-business {
+            background: #fff4e1;
+            color: #8b6914;
+        }
+
+        .badge-overview {
+            background: #e1f0ff;
+            color: #003d82;
+        }
+
+        .feature-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 1.5rem;
+            margin: 2rem 0;
+        }
+
+        .feature-card {
+            background: #f7fafc;
+            padding: 1.5rem;
+            border-radius: 8px;
+            border-left: 4px solid #667eea;
+        }
+
+        .feature-card h4 {
+            color: #2d3748;
+            margin-bottom: 0.5rem;
+            font-size: 1.1rem;
+        }
+
+        .feature-card p {
+            color: #4a5568;
+            font-size: 0.95rem;
+            margin: 0;
+        }
+
+        footer {
+            background: #2d3748;
+            color: white;
+            text-align: center;
+            padding: 2rem;
+            margin-top: 4rem;
+        }
+
+        footer a {
+            color: #667eea;
+            text-decoration: none;
+        }
+
+        @media (max-width: 768px) {
+            .header h1 {
+                font-size: 1.8rem;
+            }
+
+            .header p {
+                font-size: 1rem;
+            }
+
+            .nav ul {
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+
+            .container {
+                padding: 1rem;
+            }
+
+            .section {
+                padding: 1.5rem;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="header">
+        <h1>BackForCatalog API</h1>
+        <p>Node.js Backend for React Native E-Commerce Application</p>
+    </div>
+
+    <nav class="nav">
+        <ul>
+            <li><a href="#overview">Overview</a></li>
+            <li><a href="#architecture">Architecture</a></li>
+            <li><a href="#authentication">Authentication</a></li>
+            <li><a href="#business-flows">Business Flows</a></li>
+            <li><a href="#api-reference">API Reference</a></li>
+        </ul>
+    </nav>
+
+    <div class="container">
+        <!-- Overview Section -->
+        <section id="overview" class="section">
+            <h2>Overview</h2>
+            <p>
+                BackForCatalog is a robust Node.js backend service built with Fastify and TypeScript, 
+                designed to power React Native e-commerce applications. It provides a complete OAuth 2.0 
+                authentication system, product catalogue management, and checkout processing with inventory control.
+            </p>
+
+            <div class="feature-grid">
+                <div class="feature-card">
+                    <h4>🔐 OAuth 2.0 Authentication</h4>
+                    <p>Email-based authentication with JWT tokens and secure authorization codes</p>
+                </div>
+                <div class="feature-card">
+                    <h4>📦 Product Catalogue</h4>
+                    <p>Paginated product listings with filtering and active status management</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🛒 Checkout Processing</h4>
+                    <p>Complete order processing with inventory validation and payment intents</p>
+                </div>
+                <div class="feature-card">
+                    <h4>⚡ High Performance</h4>
+                    <p>Built on Fastify with rate limiting, CORS, and comprehensive error handling</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🔒 Secure by Design</h4>
+                    <p>JWT verification, input validation, and request authentication middleware</p>
+                </div>
+                <div class="feature-card">
+                    <h4>🧪 Well-Tested</h4>
+                    <p>Comprehensive unit and integration tests with Vitest</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Architecture Section -->
+        <section id="architecture" class="section">
+            <h2>System Architecture</h2>
+            <span class="badge badge-overview">Overview</span>
+            <p>
+                The system follows a layered architecture pattern with clear separation of concerns. 
+                The API layer handles HTTP requests, middleware processes authentication and validation, 
+                business logic services manage core functionality, and in-memory storage provides fast data access.
+            </p>
+
+            <div class="diagram">
+                <div class="diagram-title">System Architecture Diagram</div>
+                <img src="diagrams/exported/system-architecture.svg" alt="System Architecture">
+            </div>
+
+            <h3>Architecture Layers</h3>
+            <ul style="margin-left: 2rem; color: #4a5568;">
+                <li><strong>Client Layer:</strong> React Native mobile application</li>
+                <li><strong>API Layer:</strong> Fastify routes and middleware (CORS, rate limiting, JWT verification)</li>
+                <li><strong>Business Logic Layer:</strong> Services for authentication, catalogue, and checkout</li>
+                <li><strong>Data Storage Layer:</strong> In-memory Map storage for products, users, and auth codes</li>
+                <li><strong>External Integrations:</strong> Shopify as source of truth for product data</li>
+            </ul>
+        </section>
+
+        <!-- Authentication Section -->
+        <section id="authentication" class="section">
+            <h2>Authentication Flow</h2>
+            <span class="badge badge-auth">OAuth 2.0</span>
+            <span class="badge badge-auth">JWT</span>
+            <p>
+                The authentication system implements OAuth 2.0 authorization code flow with JWT tokens. 
+                Users authenticate via email, receive a time-limited authorization code, exchange it for 
+                a JWT access token, and use the token for subsequent API requests.
+            </p>
+
+            <h3>Overview: Complete Authentication Flow</h3>
+            <div class="diagram">
+                <div class="diagram-title">OAuth 2.0 Authentication Sequence</div>
+                <img src="diagrams/exported/oauth-flow-sequence.svg" alt="OAuth Flow Sequence">
+            </div>
+
+            <h3>Detailed Flows</h3>
+            
+            <h4 style="margin-top: 2rem; color: #2d3748;">Phase 1: Login & Authorization Code Generation</h4>
+            <p>
+                The login phase validates the user's email address, creates or retrieves the user account, 
+                generates a cryptographically secure 32-byte authorization code, and stores it with a 10-minute expiration.
+            </p>
+            <div class="diagram">
+                <div class="diagram-title">Login Detail</div>
+                <img src="diagrams/exported/oauth-login-detail.svg" alt="OAuth Login Detail">
+            </div>
+
+            <h4 style="margin-top: 2rem; color: #2d3748;">Phase 2: Token Exchange</h4>
+            <p>
+                The token exchange phase validates the authorization code, marks it as used (one-time use), 
+                generates a JWT token with HS256 algorithm, and returns it with a 1-hour expiration.
+            </p>
+            <div class="diagram">
+                <div class="diagram-title">Token Exchange Detail</div>
+                <img src="diagrams/exported/oauth-token-exchange-detail.svg" alt="OAuth Token Exchange Detail">
+            </div>
+
+            <h4 style="margin-top: 2rem; color: #2d3748;">Phase 3: JWT Verification</h4>
+            <p>
+                Protected endpoints extract the JWT token from the Authorization header, verify the signature 
+                using the JWT secret, check expiration and claims (issuer, audience), and attach user information 
+                to the request context.
+            </p>
+            <div class="diagram">
+                <div class="diagram-title">JWT Verification Detail</div>
+                <img src="diagrams/exported/oauth-jwt-verification-detail.svg" alt="OAuth JWT Verification Detail">
+            </div>
+        </section>
+
+        <!-- Business Flows Section -->
+        <section id="business-flows" class="section">
+            <h2>Business Flows</h2>
+            <span class="badge badge-business">Catalogue</span>
+            <span class="badge badge-business">Checkout</span>
+
+            <h3>Catalogue Flow</h3>
+            <p>
+                The catalogue endpoint retrieves active products with pagination support. It validates query parameters 
+                (page and limit), applies default values, filters products by active status, calculates pagination metadata, 
+                and returns the requested page of products.
+            </p>
+            <div class="diagram">
+                <div class="diagram-title">Catalogue Retrieval Process</div>
+                <img src="diagrams/exported/catalog-flow.svg" alt="Catalog Flow">
+            </div>
+
+            <h3>Checkout Flow</h3>
+            <p>
+                The checkout process validates the JWT token, checks the items array, verifies product availability 
+                and inventory levels, calculates the total amount, creates a payment intent, updates inventory, 
+                and returns the checkout result with payment details.
+            </p>
+            <div class="diagram">
+                <div class="diagram-title">Checkout Processing Flow</div>
+                <img src="diagrams/exported/checkout-flow.svg" alt="Checkout Flow">
+            </div>
+        </section>
+
+        <!-- Swagger UI Section -->
+        <section id="api-reference" class="swagger-section">
+            <h2 style="padding: 1.5rem; margin: 0; color: #2d3748;">API Reference</h2>
+            <div id="swagger-ui"></div>
+        </section>
+    </div>
+
+    <footer>
+        <p>&copy; 2025 BackForCatalog API. Licensed under <a href="https://opensource.org/licenses/MIT" target="_blank">MIT</a>.</p>
+        <p style="margin-top: 0.5rem; opacity: 0.8;">Built with Fastify, TypeScript, and OAuth 2.0</p>
+    </footer>
+
+    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-bundle.js"></script>
+    <script src="https://unpkg.com/swagger-ui-dist@5.10.5/swagger-ui-standalone-preset.js"></script>
+    <script>
+        window.onload = function() {
+            window.ui = SwaggerUIBundle({
+                url: 'swagger.yaml',
+                dom_id: '#swagger-ui',
+                deepLinking: true,
+                presets: [
+                    SwaggerUIBundle.presets.apis,
+                    SwaggerUIStandalonePreset
+                ],
+                plugins: [
+                    SwaggerUIBundle.plugins.DownloadUrl
+                ],
+                layout: "StandaloneLayout",
+                defaultModelsExpandDepth: 1,
+                defaultModelExpandDepth: 1,
+                docExpansion: 'list',
+                filter: true,
+                showExtensions: true,
+                showCommonExtensions: true,
+                tryItOutEnabled: true
+            });
+        };
+    </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+%%{init: {'theme':'base', 'themeVariables': {'fontSize':'18px'}}}%%
+flowchart LR
+    Start([POST /auth/token<br/>Code Received]) --> ValidateCode{" <br/> Code<br/>Valid? <br/> <br/> "}
+    
+    ValidateCode -->|Not Found<br/>or Empty| Err1[400 Bad Request<br/>Invalid Code]
+    
+    ValidateCode -->|Found| CheckUsed{" <br/> Already<br/>Used? <br/> <br/> "}
+    
+    CheckUsed -->|Yes| Err2[400 Bad Request<br/>Code Already Used]
+    
+    CheckUsed -->|No| CheckExpiry{" <br/> Code<br/>Expired? <br/> <br/> "}
+    
+    CheckExpiry -->|Yes| Err3[400 Bad Request<br/>Code Expired]
+    
+    CheckExpiry -->|No| MarkUsed[Mark Code<br/>as Used]
+    
+    MarkUsed --> ExtractEmail[Extract Email<br/>from Code]
+    
+    ExtractEmail --> CreateJWT[Create JWT<br/>Payload<br/>Claims]
+    
+    CreateJWT --> SignJWT[Sign JWT<br/>with HS256<br/>Secret]
+    
+    SignJWT --> Success[200 OK<br/>Return<br/>JWT Token]
+    
+    Success --> End([End])
+    Err1 --> End
+    Err2 --> End
+    Err3 --> End
+    
+    style Start fill:#e1f5e1,stroke:#2d5016,stroke-width:4px,font-size:18px
+    style Success fill:#e1f5e1,stroke:#2d5016,stroke-width:4px,font-size:18px
+    style End fill:#e1f5e1,stroke:#2d5016,stroke-width:4px,font-size:18px
+    
+    style Err1 fill:#ffe1e1,stroke:#8b0000,stroke-width:3px,font-size:16px
+    style Err2 fill:#ffe1e1,stroke:#8b0000,stroke-width:3px,font-size:16px
+    style Err3 fill:#ffe1e1,stroke:#8b0000,stroke-width:3px,font-size:16px
+    
+    style CreateJWT fill:#e1f0ff,stroke:#003d82,stroke-width:4px,font-size:18px
+    style SignJWT fill:#e1f0ff,stroke:#003d82,stroke-width:4px,font-size:18px
+    
+    style MarkUsed fill:#fff4e1,stroke:#8b6914,stroke-width:4px,font-size:18px
+    style ExtractEmail fill:#fff4e1,stroke:#8b6914,stroke-width:3px,font-size:16px
+    
+    style ValidateCode stroke-width:4px,font-size:18px
+    style CheckUsed stroke-width:4px,font-size:18px
+    style CheckExpiry stroke-width:4px,font-size:18px
